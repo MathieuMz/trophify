@@ -20,7 +20,7 @@ async function main() {
   await app.register(categoriesRoutes);
   await app.register(votesRoutes);
 
-  await app.listen({ port: Number(process.env.PORT ?? 3001) });
+  await app.listen({ port: Number(process.env.PORT ?? 3001), host: "0.0.0.0" });
 }
 
 main();
