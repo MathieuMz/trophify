@@ -18,6 +18,9 @@ export interface Category {
   name: string
   description: string | null
   position: number
+  name_en: string | null
+  description_en: string | null
+  image_url: string | null
 }
 
 export interface TopCandidate extends Participant {

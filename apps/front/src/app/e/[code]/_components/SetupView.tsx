@@ -1,54 +1,57 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
+import { useState } from "react";
 import {
   addParticipant,
   deleteParticipant,
   addCategory,
   deleteCategory,
   setPhase,
-} from '@/lib/api'
-import type { TrophifyEvent, Participant, Category } from '@/lib/types'
+} from "@/lib/api";
+import type { TrophifyEvent, Participant, Category } from "@/lib/types";
 
-type SetupStep = 'participants' | 'categories'
+type SetupStep = "participants" | "categories";
 
 interface Props {
-  code: string
-  event: TrophifyEvent
-  participants: Participant[]
-  categories: Category[]
-  organizerToken: string | null
-  onRefresh: () => void
+  code: string;
+  event: TrophifyEvent;
+  participants: Participant[];
+  categories: Category[];
+  organizerToken: string | null;
+  onRefresh: () => void;
+  onSetOrganizerToken: (token: string) => void;
 }
 
-export default function SetupView({ code, event, participants, categories, organizerToken, onRefresh }: Props) {
-  const [step, setStep] = useState<SetupStep>('participants')
+export default function SetupView({
+  code,
+  event,
+  participants,
+  categories,
+  organizerToken,
+  onRefresh,
+  onSetOrganizerToken,
+}: Props) {
+  const [step, setStep] = useState<SetupStep>("participants");
 
   if (!organizerToken) {
-    return (
-      <div className="text-center py-16 space-y-3">
-        <p className="text-4xl">⏳</p>
-        <p className="text-lg font-medium">En attente de l&apos;organisateur</p>
-        <p className="text-gray-500 text-sm">Les votes n&apos;ont pas encore été ouverts.</p>
-      </div>
-    )
+    return <WaitingView onSetOrganizerToken={onSetOrganizerToken} />;
   }
 
   return (
     <div className="space-y-6">
       <StepTabs step={step} onStep={setStep} />
 
-      {step === 'participants' && (
+      {step === "participants" && (
         <ParticipantsSection
           code={code}
           participants={participants}
           token={organizerToken}
           onRefresh={onRefresh}
-          onNext={() => setStep('categories')}
+          onNext={() => setStep("categories")}
         />
       )}
 
-      {step === 'categories' && (
+      {step === "categories" && (
         <CategoriesSection
           code={code}
           event={event}
@@ -56,78 +59,158 @@ export default function SetupView({ code, event, participants, categories, organ
           categories={categories}
           token={organizerToken}
           onRefresh={onRefresh}
-          onBack={() => setStep('participants')}
+          onBack={() => setStep("participants")}
         />
       )}
     </div>
-  )
+  );
 }
 
-function StepTabs({ step, onStep }: { step: SetupStep; onStep: (s: SetupStep) => void }) {
+function WaitingView({
+  onSetOrganizerToken,
+}: {
+  onSetOrganizerToken: (token: string) => void;
+}) {
+  const [showForm, setShowForm] = useState(false);
+  const [token, setToken] = useState("");
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!token.trim()) return;
+    onSetOrganizerToken(token.trim());
+  }
+
+  return (
+    <div className="py-16 space-y-8">
+      <div className="text-center space-y-3">
+        <p className="text-4xl">⏳</p>
+        <p className="text-lg font-medium">En attente de l&apos;organisateur</p>
+        <p className="text-gray-500 text-sm">
+          Les votes n&apos;ont pas encore été ouverts.
+        </p>
+      </div>
+
+      {!showForm ? (
+        <div className="text-center">
+          <button
+            onClick={() => setShowForm(true)}
+            className="text-sm text-gray-400 hover:text-gray-700 underline underline-offset-2 transition-colors"
+          >
+            Vous êtes l&apos;organisateur ?
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-2">
+          <input
+            type="text"
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+            placeholder="Token organisateur"
+            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+            autoFocus
+          />
+          <button
+            type="submit"
+            disabled={!token.trim()}
+            className="w-full bg-gray-800 hover:bg-gray-900 disabled:opacity-40 text-white text-sm font-medium py-2.5 px-4 rounded-xl transition-colors"
+          >
+            Accéder au setup
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowForm(false)}
+            className="w-full text-sm text-gray-400 hover:text-gray-600 py-1 transition-colors"
+          >
+            Annuler
+          </button>
+        </form>
+      )}
+    </div>
+  );
+}
+
+function StepTabs({
+  step,
+  onStep,
+}: {
+  step: SetupStep;
+  onStep: (s: SetupStep) => void;
+}) {
   return (
     <div className="flex rounded-xl border border-gray-200 overflow-hidden text-sm font-medium">
       <button
-        onClick={() => onStep('participants')}
+        onClick={() => onStep("participants")}
         className={`flex-1 py-2.5 transition-colors ${
-          step === 'participants'
-            ? 'bg-gray-900 text-white'
-            : 'bg-white text-gray-500 hover:bg-gray-50'
+          step === "participants"
+            ? "bg-gray-900 text-white"
+            : "bg-white text-gray-500 hover:bg-gray-50"
         }`}
       >
         1 · Participants
       </button>
       <button
-        onClick={() => onStep('categories')}
+        onClick={() => onStep("categories")}
         className={`flex-1 py-2.5 transition-colors border-l border-gray-200 ${
-          step === 'categories'
-            ? 'bg-gray-900 text-white'
-            : 'bg-white text-gray-500 hover:bg-gray-50'
+          step === "categories"
+            ? "bg-gray-900 text-white"
+            : "bg-white text-gray-500 hover:bg-gray-50"
         }`}
       >
         2 · Catégories
       </button>
     </div>
-  )
+  );
 }
 
 function ParticipantsSection({
-  code, participants, token, onRefresh, onNext,
+  code,
+  participants,
+  token,
+  onRefresh,
+  onNext,
 }: {
-  code: string
-  participants: Participant[]
-  token: string
-  onRefresh: () => void
-  onNext: () => void
+  code: string;
+  participants: Participant[];
+  token: string;
+  onRefresh: () => void;
+  onNext: () => void;
 }) {
-  const [name, setName] = useState('')
-  const [imageUrl, setImageUrl] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [name, setName] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function handleAdd(e: React.FormEvent) {
-    e.preventDefault()
-    if (!name.trim()) return
-    setLoading(true)
+    e.preventDefault();
+    if (!name.trim()) return;
+    setLoading(true);
     try {
-      await addParticipant(code, { name: name.trim(), imageUrl: imageUrl.trim() || undefined }, token)
-      setName('')
-      setImageUrl('')
-      onRefresh()
+      await addParticipant(
+        code,
+        { name: name.trim(), imageUrl: imageUrl.trim() || undefined },
+        token,
+      );
+      setName("");
+      setImageUrl("");
+      onRefresh();
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   async function handleDelete(id: string) {
-    await deleteParticipant(code, id, token)
-    onRefresh()
+    await deleteParticipant(code, id, token);
+    onRefresh();
   }
 
   return (
     <div className="space-y-4">
       <ul className="space-y-2">
         {participants.map((p) => (
-          <li key={p.id} className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-gray-100">
-            <Avatar participant={p} size={32} />
+          <li
+            key={p.id}
+            className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-gray-100"
+          >
+            <Avatar participant={p} size={80} />
             <span className="flex-1 text-sm font-medium">{p.name}</span>
             <button
               onClick={() => handleDelete(p.id)}
@@ -138,7 +221,9 @@ function ParticipantsSection({
           </li>
         ))}
         {participants.length === 0 && (
-          <li className="text-sm text-gray-400 py-2">Aucun participant pour l&apos;instant</li>
+          <li className="text-sm text-gray-400 py-2">
+            Aucun participant pour l&apos;instant
+          </li>
         )}
       </ul>
 
@@ -175,95 +260,161 @@ function ParticipantsSection({
           Suivant — Catégories →
         </button>
         {participants.length < 2 && (
-          <p className="text-xs text-gray-400 text-center mt-2">Ajoutez au moins 2 participants</p>
+          <p className="text-xs text-gray-400 text-center mt-2">
+            Ajoutez au moins 2 participants
+          </p>
         )}
       </div>
     </div>
-  )
+  );
 }
 
 function CategoriesSection({
-  code, event, participants, categories, token, onRefresh, onBack,
+  code,
+  event,
+  participants,
+  categories,
+  token,
+  onRefresh,
+  onBack,
 }: {
-  code: string
-  event: TrophifyEvent
-  participants: Participant[]
-  categories: Category[]
-  token: string
-  onRefresh: () => void
-  onBack: () => void
+  code: string;
+  event: TrophifyEvent;
+  participants: Participant[];
+  categories: Category[];
+  token: string;
+  onRefresh: () => void;
+  onBack: () => void;
 }) {
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [openLoading, setOpenLoading] = useState(false)
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [nameEn, setNameEn] = useState("");
+  const [descriptionEn, setDescriptionEn] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [openLoading, setOpenLoading] = useState(false);
 
   async function handleAdd(e: React.FormEvent) {
-    e.preventDefault()
-    if (!name.trim()) return
-    setLoading(true)
+    e.preventDefault();
+    if (!name.trim()) return;
+    setLoading(true);
     try {
-      await addCategory(code, { name: name.trim(), description: description.trim() || undefined }, token)
-      setName('')
-      setDescription('')
-      onRefresh()
+      await addCategory(
+        code,
+        {
+          name: name.trim(),
+          description: description.trim() || undefined,
+          nameEn: nameEn.trim() || undefined,
+          descriptionEn: descriptionEn.trim() || undefined,
+          imageUrl: imageUrl.trim() || undefined,
+        },
+        token,
+      );
+      setName("");
+      setDescription("");
+      setNameEn("");
+      setDescriptionEn("");
+      setImageUrl("");
+      onRefresh();
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   async function handleDelete(id: string) {
-    await deleteCategory(code, id, token)
-    onRefresh()
+    await deleteCategory(code, id, token);
+    onRefresh();
   }
 
   async function handleOpen() {
-    setOpenLoading(true)
+    setOpenLoading(true);
     try {
-      await setPhase(code, 'voting', token)
-      onRefresh()
+      await setPhase(code, "voting", token);
+      onRefresh();
     } finally {
-      setOpenLoading(false)
+      setOpenLoading(false);
     }
   }
 
-  const canOpen = participants.length >= 2 && categories.length >= 1
+  const canOpen = participants.length >= 2 && categories.length >= 1;
 
   return (
     <div className="space-y-4">
       <ul className="space-y-2">
         {categories.map((c) => (
-          <li key={c.id} className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-gray-100">
-            <span className="flex-1">
+          <li
+            key={c.id}
+            className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 border border-gray-100"
+          >
+            {c.image_url && (
+              <img
+                src={c.image_url}
+                alt={c.name}
+                className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+              />
+            )}
+            <span className="flex-1 min-w-0">
               <span className="text-sm font-medium">{c.name}</span>
-              {c.description && <span className="text-xs text-gray-400 ml-2">{c.description}</span>}
+              {c.name_en && (
+                <span className="text-xs text-gray-400 ml-1">/ {c.name_en}</span>
+              )}
+              {c.description && (
+                <p className="text-xs text-gray-400 truncate">{c.description}</p>
+              )}
             </span>
             <button
               onClick={() => handleDelete(c.id)}
-              className="text-gray-300 hover:text-red-500 transition-colors text-xs"
+              className="text-gray-300 hover:text-red-500 transition-colors text-xs flex-shrink-0"
             >
               ✕
             </button>
           </li>
         ))}
         {categories.length === 0 && (
-          <li className="text-sm text-gray-400 py-2">Aucune catégorie pour l&apos;instant</li>
+          <li className="text-sm text-gray-400 py-2">
+            Aucune catégorie pour l&apos;instant
+          </li>
         )}
       </ul>
 
       <form onSubmit={handleAdd} className="space-y-2">
+        <div className="grid grid-cols-2 gap-2">
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Nom (FR)"
+            className="border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <input
+            type="text"
+            value={nameEn}
+            onChange={(e) => setNameEn(e.target.value)}
+            placeholder="Name (EN)"
+            className="border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <input
+            type="text"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Description (FR)"
+            className="border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <input
+            type="text"
+            value={descriptionEn}
+            onChange={(e) => setDescriptionEn(e.target.value)}
+            placeholder="Description (EN)"
+            className="border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
         <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Nom de la catégorie"
-          className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <input
-          type="text"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Description (optionnel)"
+          type="url"
+          value={imageUrl}
+          onChange={(e) => setImageUrl(e.target.value)}
+          placeholder="URL d'illustration (optionnel)"
           className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <button
@@ -281,10 +432,12 @@ function CategoriesSection({
           disabled={!canOpen || openLoading}
           className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-semibold py-3 px-4 rounded-xl transition-colors"
         >
-          {openLoading ? 'Ouverture…' : '🗳️ Ouvrir le vote'}
+          {openLoading ? "Ouverture…" : "🗳️ Ouvrir le vote"}
         </button>
         {!canOpen && (
-          <p className="text-xs text-gray-400 text-center">Ajoutez au moins 1 catégorie</p>
+          <p className="text-xs text-gray-400 text-center">
+            Ajoutez au moins 1 catégorie
+          </p>
         )}
         <button
           onClick={onBack}
@@ -294,10 +447,16 @@ function CategoriesSection({
         </button>
       </div>
     </div>
-  )
+  );
 }
 
-export function Avatar({ participant, size = 40 }: { participant: Participant; size?: number }) {
+export function Avatar({
+  participant,
+  size = 80,
+}: {
+  participant: Participant;
+  size?: number;
+}) {
   if (participant.image_url) {
     return (
       <img
@@ -308,18 +467,18 @@ export function Avatar({ participant, size = 40 }: { participant: Participant; s
         className="rounded-full object-cover flex-shrink-0"
         style={{ width: size, height: size }}
         onError={(e) => {
-          e.currentTarget.style.display = 'none'
+          e.currentTarget.style.display = "none";
         }}
       />
-    )
+    );
   }
 
   const initials = participant.name
-    .split(' ')
+    .split(" ")
     .map((w) => w[0])
     .slice(0, 2)
-    .join('')
-    .toUpperCase()
+    .join("")
+    .toUpperCase();
 
   return (
     <div
@@ -328,5 +487,5 @@ export function Avatar({ participant, size = 40 }: { participant: Participant; s
     >
       {initials}
     </div>
-  )
+  );
 }

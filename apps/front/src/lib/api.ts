@@ -45,7 +45,7 @@ export function deleteParticipant(code: string, id: string, organizerToken: stri
 
 export function addCategory(
   code: string,
-  data: { name: string; description?: string },
+  data: { name: string; description?: string; nameEn?: string; descriptionEn?: string; imageUrl?: string },
   organizerToken: string
 ): Promise<Category> {
   return json(`/events/${code}/categories`, {

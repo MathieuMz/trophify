@@ -74,6 +74,7 @@ export default function EventPage() {
             categories={categories}
             organizerToken={identity.organizerToken}
             onRefresh={refresh}
+            onSetOrganizerToken={identity.setOrganizerToken}
           />
         )}
 

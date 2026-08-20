@@ -6,7 +6,7 @@ export async function categoriesRoutes(app: FastifyInstance) {
   app.post<{ Params: { code: string } }>('/events/:code/categories', async (request, reply) => {
     const { code } = request.params
     const event = await requireOrganizer(request, code)
-    const body = request.body as { name?: string; description?: string }
+    const body = request.body as { name?: string; description?: string; nameEn?: string; descriptionEn?: string; imageUrl?: string }
 
     if (!body?.name?.trim()) {
       return reply.status(400).send({ error: 'name is required' })
@@ -28,6 +28,9 @@ export async function categoriesRoutes(app: FastifyInstance) {
         event_id: event.id,
         name: body.name.trim(),
         description: body.description?.trim() ?? null,
+        name_en: body.nameEn?.trim() ?? null,
+        description_en: body.descriptionEn?.trim() ?? null,
+        image_url: body.imageUrl?.trim() ?? null,
         position,
       })
       .select()
