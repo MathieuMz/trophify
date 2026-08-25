@@ -148,7 +148,7 @@ npm run dev:front    # front only
 
 ## Key Design Decisions
 
-- **No RLS** — the API uses the service_role key; access control is enforced in route logic.
+- **RLS enabled, no policies** — every table has Row Level Security turned on with no policies attached (see `supabase/migrations`), so the `anon`/`authenticated` roles get zero direct access via PostgREST. The API talks to Supabase with the `service_role` key, which bypasses RLS, so all real access control is still enforced in route logic.
 - **No real-time** — results don't update live while voting is open (intentional for the reveal effect).
 - **Full client-side** — all `/e/[code]` pages are `"use client"` components fetching via `useEffect`. No server components or revalidation for now.
 - **No UI library** — components are written by hand with Tailwind utilities.
