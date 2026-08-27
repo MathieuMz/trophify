@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { castVote, getMyVotes, setPhase } from '@/lib/api'
 import type { Participant, Category } from '@/lib/types'
 import { Avatar } from './SetupView'
@@ -14,6 +14,15 @@ interface Props {
   onRefresh: () => void
 }
 
+function shuffle<T>(arr: T[]): T[] {
+  const result = [...arr]
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[result[i], result[j]] = [result[j], result[i]]
+  }
+  return result
+}
+
 export default function VotingView({ code, participants, categories, voter, organizerToken, onRefresh }: Props) {
   const [votes, setVotes] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
@@ -21,6 +30,18 @@ export default function VotingView({ code, participants, categories, voter, orga
   const [revealLoading, setRevealLoading] = useState(false)
 
   const candidates = participants.filter((p) => p.id !== voter.id)
+  const candidateIds = candidates.map((c) => c.id).join(',')
+  const categoryIds = categories.map((c) => c.id).join(',')
+
+  // Random order per category, stable across re-renders/selections.
+  const candidatesByCategory = useMemo(() => {
+    const map: Record<string, Participant[]> = {}
+    categories.forEach((cat) => {
+      map[cat.id] = shuffle(candidates)
+    })
+    return map
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [candidateIds, categoryIds])
 
   useEffect(() => {
     getMyVotes(code, voter.id).then(setVotes).catch(() => {})
@@ -75,15 +96,15 @@ export default function VotingView({ code, participants, categories, voter, orga
               <h3 className="font-semibold">{cat.name}</h3>
               {cat.description && <p className="text-xs text-gray-400 mt-0.5">{cat.description}</p>}
             </div>
-            <div className="divide-y divide-gray-50">
-              {candidates.map((c) => {
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3">
+              {candidatesByCategory[cat.id]?.map((c) => {
                 const selected = votes[cat.id] === c.id
                 return (
                   <button
                     key={c.id}
                     onClick={() => handleSelect(cat.id, c.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 transition-colors text-left ${
-                      selected ? 'bg-blue-50' : 'hover:bg-gray-50'
+                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl border transition-colors text-left ${
+                      selected ? 'bg-blue-50 border-blue-200' : 'border-gray-100 hover:bg-gray-50'
                     }`}
                   >
                     <div
@@ -93,7 +114,7 @@ export default function VotingView({ code, participants, categories, voter, orga
                     >
                       {selected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                     </div>
-                    <Avatar participant={c} size={32} />
+                    <Avatar participant={c} size={48} />
                     <span className={`text-sm font-medium ${selected ? 'text-blue-700' : ''}`}>{c.name}</span>
                   </button>
                 )
